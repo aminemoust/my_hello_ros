@@ -29,6 +29,13 @@
 #include "ros/ros.h"
 #include "std_msgs/String.h"
 
+#include <sstream>
+//count the number of msg received from the talker
+int count = 0;
+
+
+ros::Publisher filtered_pub;
+
 /**
  * This tutorial demonstrates simple receipt of messages over the ROS system.
  */
@@ -36,6 +43,18 @@
 void chatterCallback(const std_msgs::String::ConstPtr& msg)
 {
   ROS_INFO("I heard: [%s]", msg->data.c_str());
+	++count;
+	//if the listener receives 10 msgs, it sends a message in the topic filtered
+	if(count == 10){
+		count = 0;
+
+		std_msgs::String msg2;
+
+		std::stringstream ss;
+		ss << "RECEIVED 10 MESSAGES: CHECKPOINT => I heard: [" << msg->data.c_str() << "]";
+		msg2.data = ss.str();		
+		filtered_pub.publish(msg2);
+	}
 }
 // %EndTag(CALLBACK)%
 
@@ -79,6 +98,9 @@ int main(int argc, char **argv)
   ros::Subscriber sub = n.subscribe("chatter", 1000, chatterCallback);
 // %EndTag(SUBSCRIBER)%
 
+	//regist the publisher in the topic filtered
+	filtered_pub = n.advertise<std_msgs::String>("filtered", 1000);
+
   /**
    * ros::spin() will enter a loop, pumping callbacks.  With this version, all
    * callbacks will be called from within this thread (the main one).  ros::spin()
@@ -88,6 +110,8 @@ int main(int argc, char **argv)
   ros::spin();
 // %EndTag(SPIN)%
 
+
+	
   return 0;
 }
 // %EndTag(FULLTEXT)%
